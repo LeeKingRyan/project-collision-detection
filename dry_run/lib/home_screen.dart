@@ -74,6 +74,7 @@ class RandomNumberScreen extends StatefulWidget {
 
 class _RandomNumberScreenState extends State<RandomNumberScreen> {
   double _randomNumber = 0;
+  bool collision = false;
   Timer? _timer;
 
   @override
@@ -90,6 +91,11 @@ class _RandomNumberScreenState extends State<RandomNumberScreen> {
       if (data == "COLLISION") {
         putAtsignData(context, device, "disable");
         printMessage(context, 'Collision has occured at device location');
+
+        setState(() {
+          _randomNumber = 0;
+          collision = true;
+        });
         break;
       }
       // Proximity Sensor detects something: Read the distances in Centimeters
@@ -111,6 +117,14 @@ class _RandomNumberScreenState extends State<RandomNumberScreen> {
             });
 
             break;
+          } else if (data == "COLLISION") {
+            setState(() {
+              _randomNumber = 0;
+              collision = true;
+            });
+
+            printMessage(context, 'Collision has occured at device location');
+            return;
           }
 
           setState(() {
@@ -149,17 +163,39 @@ class _RandomNumberScreenState extends State<RandomNumberScreen> {
               '${_randomNumber}cm',
               style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
             ),
+            _randomNumber == 0.0 && collision == false
+                ? Text(
+                    'Nothing in Proximity',
+                    style: TextStyle(
+                        fontSize: 30,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.bold),
+                  )
+                : SizedBox.shrink(),
+            _randomNumber == 0.0 && collision == true
+                ? Text(
+                    'Collision Occured at Object site',
+                    style: TextStyle(
+                        fontSize: 30,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.bold),
+                  )
+                : SizedBox.shrink(),
             SizedBox(height: 40),
             TweenAnimationBuilder(
-              tween: Tween<double>(begin: 0, end: _randomNumber),
+              tween: Tween<double>(begin: 0, end: _randomNumber.toDouble()),
               duration: Duration(seconds: 1),
               builder: (BuildContext context, double distance, Widget? child) {
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.circle, color: Colors.blue, size: 100),
+                    Icon(Icons.circle,
+                        color: collision == true ? Colors.purple : Colors.blue,
+                        size: 100),
                     SizedBox(width: distance * 4),
-                    Icon(Icons.circle, color: Colors.red, size: 100),
+                    distance == 0.0
+                        ? Container()
+                        : Icon(Icons.circle, color: Colors.red, size: 100),
                   ],
                 );
               },

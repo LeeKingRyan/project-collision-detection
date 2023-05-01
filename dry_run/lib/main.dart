@@ -54,7 +54,7 @@ class _MyAppState extends State<MyApp> {
       // * The onboarding screen (first screen)
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('MyApp'),
+          title: const Text('Collision Detection Application'),
         ),
         body: Builder(
           builder: (context) => Center(
