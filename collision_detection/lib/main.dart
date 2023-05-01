@@ -5,7 +5,8 @@ import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_utils/at_logger.dart' show AtSignLogger;
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart' show getApplicationSupportDirectory;
+import 'package:path_provider/path_provider.dart'
+    show getApplicationSupportDirectory;
 
 import 'home_screen.dart';
 
@@ -47,19 +48,23 @@ class _MyAppState extends State<MyApp> {
   // * load the AtClientPreference in the background
   Future<AtClientPreference> futurePreference = loadAtClientPreference();
 
+  // AtClientPreference? atClientPreference;
+  // final AtSignLogger _logger = AtSignLogger(AtEnv.Namespace);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       // * The onboarding screen (first screen)
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('MyApp'),
+          title: const Text('Choose a Monitor Device'),
         ),
         body: Builder(
           builder: (context) => Center(
             child: ElevatedButton(
               onPressed: () async {
-                AtOnboardingResult onboardingResult = await AtOnboarding.onboard(
+                AtOnboardingResult onboardingResult =
+                    await AtOnboarding.onboard(
                   context: context,
                   config: AtOnboardingConfig(
                     atClientPreference: await futurePreference,
@@ -70,7 +75,8 @@ class _MyAppState extends State<MyApp> {
                 );
                 switch (onboardingResult.status) {
                   case AtOnboardingResultStatus.success:
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const HomeScreen()));
                     break;
                   case AtOnboardingResultStatus.error:
                     ScaffoldMessenger.of(context).showSnackBar(
