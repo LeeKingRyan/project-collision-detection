@@ -2,14 +2,15 @@
 // @sign. In this case, we want to send the string to an esp32 device to
 // activate use of its sensors.
 import 'package:at_client_mobile/at_client_mobile.dart';
-import 'package:collision_detection/main.dart';
+import 'package:dry_run/main.dart';
 
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'transfer_functions.dart';
+import 'dart:convert';
 
 void activateMonitor(context, String device) async {
-  // const String on = "active";
+  // const String on = "activate";
   // Get the AtClientManager instance
   var atClientManager = AtClientManager.getInstance();
 
@@ -123,31 +124,6 @@ Future<String> getAtsignData(context, String sharedByAtsign) async {
 // another @sign of a different esp32. Or if a "PROXIMITY" string is read, then
 // the following distances in centimeters of the object in proximity from
 // the esp32's ultrasonic sensor's are recorded.
-void dataAnalysis(context, String device) async {
-  while (true) {
-    String data = await getAtsignData(context, device);
-    // Collision Detected: Disable the esp32 from its next iteration of monitoring
-    if (data == "COLLISION") {
-      putAtsignData(context, device, "disable");
-      printMessage(context, 'Collision has occured at device location');
-      break;
-    }
-    // Proximity Sensor detects something: Read the distances in Centimeters
-    // until nothing is no long in proximity or a collision occurs!
-    else if (data == "PROXIMITY") {
-      printMessage(context, 'Something is within proximity');
-      while (true) {
-        await Future.delayed(const Duration(seconds: 10));
-        data = await getAtsignData(context, device);
-        if (data == "NO_PROXIMITY") {
-          break;
-        }
-        printMessage(context, 'Distance in inches from UFO: $data');
-      }
-      printMessage(context, 'Nothing is within proximity anymore');
-    }
-  }
-}
 
 // The following function prints a message
 void printMessage(context, String message) {
