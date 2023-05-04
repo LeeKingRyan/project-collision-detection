@@ -28,9 +28,7 @@ Future<AtClientPreference> loadAtClientPreference() async {
 
   return AtClientPreference()
     ..rootDomain = AtEnv.rootDomain
-    ..namespace = "socrates9"
-
-    ///AtEnv.appNamespace
+    ..namespace = 'socrates9'
     ..hiveStoragePath = dir.path
     ..commitLogPath = dir.path
     ..isLocalStoreRequired = true;
@@ -56,7 +54,7 @@ class _MyAppState extends State<MyApp> {
       // * The onboarding screen (first screen)
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Collision Detection Application'),
+          title: const Text('MyApp'),
         ),
         body: Builder(
           builder: (context) => Center(

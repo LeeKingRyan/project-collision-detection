@@ -53,9 +53,13 @@ class HomeScreen extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
+              activateMonitor(context, myController.text);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => RandomNumberScreen()),
+                MaterialPageRoute(
+                    builder: (context) => RandomNumberScreen(
+                          text: myController.text,
+                        )),
               );
             },
             child: Text('Start'),
@@ -68,6 +72,9 @@ class HomeScreen extends StatelessWidget {
 }
 
 class RandomNumberScreen extends StatefulWidget {
+  final String text; // This screen waits for a string valuu, expected on
+  // its constructor
+  RandomNumberScreen({required this.text});
   @override
   _RandomNumberScreenState createState() => _RandomNumberScreenState();
 }
@@ -81,7 +88,7 @@ class _RandomNumberScreenState extends State<RandomNumberScreen> {
   void initState() {
     super.initState();
     // random number only changes after function finishes.
-    dataAnalysis(context, "@6isolated69");
+    dataAnalysis(context, widget.text); // text is @6isolated69
   }
 
   void dataAnalysis(context, String device) async {
@@ -122,7 +129,7 @@ class _RandomNumberScreenState extends State<RandomNumberScreen> {
               _randomNumber = 0;
               collision = true;
             });
-
+            putAtsignData(context, device, "disable");
             printMessage(context, 'Collision has occured at device location');
             return;
           }
@@ -173,6 +180,10 @@ class _RandomNumberScreenState extends State<RandomNumberScreen> {
                   )
                 : SizedBox.shrink(),
             _randomNumber == 0.0 && collision == true
+                // Create an animation here where the balls will bounce off
+                // each other. Additionally, this bounce animation may depend
+                // on the retrieved value of the esp32 connected to the pressure
+                // sensor Unmit.
                 ? Text(
                     'Collision Occured at Object site',
                     style: TextStyle(

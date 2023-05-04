@@ -38,12 +38,14 @@ void activateMonitor(context, String device) async {
     ..key = "test" // special key shared between the @atsigns communicating
     ..sharedBy = currentAtsign // chosen @sign to send data
     ..sharedWith = device // The @sign that will recieve data sent to it
+    ..namespace = "socrates9"
     ..metadata = metaData;
 
   String value = "active";
 
   // Send the data to the designated esp32 in the paramter device
-  await atClient.putText(key, value);
+  bool success = await atClient.put(key, value);
+  print('Write success? $success');
   printMessage(context, 'Successfully actived the esp32 at $device');
 }
 
@@ -80,7 +82,8 @@ void putAtsignData(context, String device, String value) async {
     ..metadata = metaData;
 
   // Send the data to the designated esp32 in the paramter device
-  await atClient.put(key, value);
+  bool success = await atClient.put(key, value);
+  print('Write success? $success');
 }
 
 // This function gets the value sent to the current @sign (the Flutter app)
@@ -111,6 +114,7 @@ Future<String> getAtsignData(context, String sharedByAtsign) async {
     ..key = "test"
     ..sharedBy = sharedByAtsign
     ..sharedWith = currentAtsign
+    ..namespace = "socrates9"
     ..metadata = metaData;
 
   // The magic line that picks up the data
