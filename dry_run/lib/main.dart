@@ -28,7 +28,9 @@ Future<AtClientPreference> loadAtClientPreference() async {
 
   return AtClientPreference()
     ..rootDomain = AtEnv.rootDomain
-    ..namespace = AtEnv.appNamespace
+    ..namespace = "socrates9"
+
+    ///AtEnv.appNamespace
     ..hiveStoragePath = dir.path
     ..commitLogPath = dir.path
     ..isLocalStoreRequired = true;
@@ -48,16 +50,13 @@ class _MyAppState extends State<MyApp> {
   // * load the AtClientPreference in the background
   Future<AtClientPreference> futurePreference = loadAtClientPreference();
 
-  // AtClientPreference? atClientPreference;
-  // final AtSignLogger _logger = AtSignLogger(AtEnv.Namespace);
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       // * The onboarding screen (first screen)
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Choose a Monitor Device'),
+          title: const Text('Collision Detection Application'),
         ),
         body: Builder(
           builder: (context) => Center(
