@@ -89,6 +89,13 @@ class _RandomNumberScreenState extends State<RandomNumberScreen> {
     super.initState();
     // random number only changes after function finishes.
     dataAnalysis(context, widget.text); // text is @6isolated69
+
+    // After a collision is detected, then dataAnalysis should finish
+    // Next we begin reading the pressure data to animate the squishing
+    // of the colored squares if an object were still in proximity.
+
+    // If the object is not in proximity, then the squares bounced off
+    // each other and this will be based on the pressure.
   }
 
   void dataAnalysis(context, String device) async {
@@ -103,7 +110,7 @@ class _RandomNumberScreenState extends State<RandomNumberScreen> {
           _randomNumber = 0;
           collision = true;
         });
-        break;
+        return;
       }
       // Proximity Sensor detects something: Read the distances in Centimeters
       // until nothing is no long in proximity or a collision occurs!
@@ -138,8 +145,8 @@ class _RandomNumberScreenState extends State<RandomNumberScreen> {
             _randomNumber = double.parse(data);
           });
 
-          printMessage(context,
-              'Distance in centimeters from Unidentified Object UO: $data');
+          //printMessage(context,
+          //'Distance in centimeters from Unidentified Object UO: $data');
         }
         printMessage(context, 'Nothing is within proximity anymore');
       }
@@ -203,7 +210,7 @@ class _RandomNumberScreenState extends State<RandomNumberScreen> {
                     Icon(Icons.circle,
                         color: collision == true ? Colors.purple : Colors.blue,
                         size: 100),
-                    SizedBox(width: distance * 4),
+                    SizedBox(width: distance * 2),
                     distance == 0.0
                         ? Container()
                         : Icon(Icons.circle, color: Colors.red, size: 100),
@@ -211,6 +218,28 @@ class _RandomNumberScreenState extends State<RandomNumberScreen> {
                 );
               },
             ),
+            ElevatedButton(
+              onPressed: () {
+                printMessage(
+                    context, "restarting monitor, please wait 5 seconds.");
+                activateMonitor(context, widget.text);
+                // activateMonitor just sends a string "active", the function
+                // dataAnalysis can work independently from activateMonitor.
+                // Functions work separately from the widget code, so
+                // on push, naviagation happens immediately.
+                Timer(Duration(seconds: 5), () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => RandomNumberScreen(
+                              text: widget.text,
+                            )),
+                  );
+                });
+              },
+              child: Text('Restart'),
+            ),
+            const Spacer(flex: 1),
           ],
         ),
       ),

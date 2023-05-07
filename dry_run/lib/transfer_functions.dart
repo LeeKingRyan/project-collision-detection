@@ -10,6 +10,21 @@ import 'transfer_functions.dart';
 import 'dart:convert';
 
 void activateMonitor(context, String device) async {
+  // This only delays sending string "active"
+  // It will not delay the refreshing or re-navigation of the Read Distance page
+
+  //if (restart == true) {
+  //  print('Restarting Application, please wait 10 seconds.');
+  //  await Future.delayed(Duration(seconds: 10));
+  // If restarted, then this will be Collision, but hopefully not, instead
+  // NO_PROXIMITY, and restarting the application will not detect a collision
+  // immediately.
+  //  String data = await getAtsignData(context, device);
+  // Purpose of the code is to cause a delay in restarting the Flutter
+  // Application
+  //}
+  //print('Rebooting Complete');
+
   // const String on = "activate";
   // Get the AtClientManager instance
   var atClientManager = AtClientManager.getInstance();
@@ -45,6 +60,7 @@ void activateMonitor(context, String device) async {
 
   // Send the data to the designated esp32 in the paramter device
   bool success = await atClient.put(key, value);
+
   print('Write success? $success');
   printMessage(context, 'Successfully actived the esp32 at $device');
 }

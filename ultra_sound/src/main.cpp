@@ -37,24 +37,23 @@ void setup() {
   //pinMode(Led,OUTPUT);// set pin LED as output
   pinMode(Shock,INPUT);// set collision sensor as input 
 
-// change this to the atSign you own and have the keys to
-    const auto *esp32 = new AtSign("@6isolated69");
-    const auto *java = new AtSign("@impossible6891");
+  // change this to the atSign you own and have the keys to
+  const auto *esp32 = new AtSign("@6isolated69");
+  const auto *java = new AtSign("@impossible6891");
     
-    // reads the keys on the ESP32
-    const auto keys = keys_reader::read_keys(*esp32); 
+  // reads the keys on the ESP32
+  const auto keys = keys_reader::read_keys(*esp32); 
     
-    // creates the AtClient object (allows us to run operations)
-    auto *at_client = new AtClient(*esp32, keys);  
+  // creates the AtClient object (allows us to run operations)
+  auto *at_client = new AtClient(*esp32, keys);  
 
-    // pkam authenticate into our atServer
-    at_client->pkam_authenticate(SSID, PASSWORD);
+  // pkam authenticate into our atServer
+  at_client->pkam_authenticate(SSID, PASSWORD);
 
-    auto *at_key = new AtKey("test", esp32, java);
+  const auto *at_key = new AtKey("test", esp32, java);
+  auto *at_key2 = new AtKey("test", java, esp32);
 
-
-    //at_key->namespace_str = "fourballcorporate9";
-    // namespace_str is a const, there is no way to edit it
+  at_key2->namespace_str = "socrates9";
 
   //  Proximity sensor
   pinMode(Led, OUTPUT);
@@ -70,92 +69,113 @@ void setup() {
   const auto nothing = std::string("NO_PROXIMITY");
 
 
-  cout << "Nothing is within proximity" << endl;
+  cout << "Nothing is within proximity 1" << endl;
   at_client->put_ak(*at_key, nothing);
+
 
   while (true)
   {
-    // Collision Sensor
-    val=digitalRead(Shock);// read value on pin 3 and assign it to val
-    if(val!=HIGH)// when collision sensor detects a signal, LED turns on.
+
+    cout << "Monitoring is currently ";
+    cout << at_client->get_ak(*at_key2);
+    cout << "." << endl;
+
+    // Check if the value sent from Flutter Application is "active"
+    if (at_client->get_ak(*at_key2) == "active")
     {
-      digitalWrite(Led,LOW);
-      cout << "COLLISION OCCURED! CALL AN AMBULANCE!" << endl;
-      const auto value = std::string("COLLISION");
-
-      at_client->put_ak(*at_key, value);
-      break;
-    }
-
-    sensorState = digitalRead(sensorPin);
-    // if it is, the sensorState is HIGH:
-    // If the proximity sensor detects something, that is when we
-    // call for the ultra sonic sensor to calculate the distance
-    // of the object
-
-    if (sensorState == LOW) {
-      cout << "Something is within Proximity. Record the distances!" << endl;
-      at_client->put_ak(*at_key, approximate);
-    }
-
-    while (sensorState != HIGH)
-    {
-      // Clears the trigPin
-      digitalWrite(trigPin, LOW);
-      delayMicroseconds(2);
-      // Sets the trigPin on HIGH state for 10 micor seconds
-      digitalWrite(trigPin, HIGH);
-      delayMicroseconds(10);
-      digitalWrite(trigPin, LOW);
-
-      // reads the echoPin, returns the sound wave travel time in microseconds
-      duration = pulseIn(echoPin, HIGH);
-
-      // Calculate the distance
-      distanceCM = duration * SOUND_SPEED/2;
-      // Convert to inches
-      distanceInch = distanceCM * CM_TO_INCH;
-
-      // Prints the distance in the Serial Monitor
-      Serial.print("Distance (cm): ");
-      Serial.println(distanceCM);
-      Serial.print("Distance (inch): ");
-      Serial.println(distanceInch);
-
-      // Put the distance in inches to the atServer with the atkey
-      // The value must be a constant sting value.
-      // We create a new constant ever loop
-      const auto distance = std::to_string(distanceInch);
-      at_client->put_ak(*at_key, distance);
-
-      val=digitalRead(Shock);// read value on pin 3 and assign it to val
-      if(val!=HIGH)// when collision sensor detects a signal, LED turns on.
+      while (true)
       {
-        digitalWrite(Led,LOW);
-        cout << "COlLISION OCCURED! CALL AN AMBULANCE!" << endl;
-        break;
-      }
+        // Collision Sensor
+        val=digitalRead(Shock);// read value on pin 3 and assign it to val
+        if(val!=HIGH)// when collision sensor detects a signal, LED turns on.
+        {
+          digitalWrite(Led,LOW);
+          cout << "COLLISION OCCURED! CALL AN AMBULANCE!" << endl;
+          const auto value = std::string("COLLISION");
 
-      digitalWrite(Led, HIGH);
-      sensorState = digitalRead(sensorPin);
+          at_client->put_ak(*at_key, value);
+          // delay by 10 seconds to have the Flutter application give time to send a
+          // "diable" string so active isn't checked immediately.
+          //delay(10000);
+          // Don't need to delay, authentication is slow enough as is.
 
-      // Send the data in centimetrs to the app
-      //at_client->put_ak(*at_key, to_string(distanceCM));
+          // Make sure the latest sent data in't a collision string to Flutter
+          at_client->put_ak(*at_key, nothing);
 
-      delay(1000);
+          break;
+        }
 
-      // Tell the app that nothing has been detected:
-      // The Java app will continue having the same
-      // latest value of nothing having been within proximity. 
-      if (sensorState == HIGH)
-      {
-        cout << "Nothing is within proximity" << endl;
-        at_client->put_ak(*at_key, nothing);
-      }
+        sensorState = digitalRead(sensorPin);
+        // if it is, the sensorState is HIGH:
+        // If the proximity sensor detects something, that is when we
+        // call for the ultra sonic sensor to calculate the distance
+        // of the object
 
-    }
-    digitalWrite(Led, LOW);
-  }
+        if (sensorState == LOW) {
+          cout << "Something is within Proximity. Record the distances!" << endl;
+          at_client->put_ak(*at_key, approximate);
+        }
+
+        while (sensorState != HIGH)
+        {
+          // Clears the trigPin
+          digitalWrite(trigPin, LOW);
+          delayMicroseconds(2);
+          // Sets the trigPin on HIGH state for 10 micor seconds
+          digitalWrite(trigPin, HIGH);
+          delayMicroseconds(10);
+          digitalWrite(trigPin, LOW);
+
+          // reads the echoPin, returns the sound wave travel time in microseconds
+          duration = pulseIn(echoPin, HIGH);
+
+          // Calculate the distance
+          distanceCM = duration * SOUND_SPEED/2;
+          // Convert to inches
+          distanceInch = distanceCM * CM_TO_INCH;
+
+          // Prints the distance in the Serial Monitor
+          Serial.print("Distance (cm): ");
+          Serial.println(distanceCM);
+          Serial.print("Distance (inch): ");
+          Serial.println(distanceInch);
+
+          // Put the distance in inches to the atServer with the atkey
+          // The value must be a constant sting value.
+          // We create a new constant ever loop
+          const auto distance = std::to_string(distanceCM);
+          at_client->put_ak(*at_key, distance);
+
+          val=digitalRead(Shock);// read value on pin 3 and assign it to val
+          if(val!=HIGH)// when collision sensor detects a signal, LED turns on.
+          {
+            digitalWrite(Led,LOW);
+            cout << "COlLISION OCCURED! CALL AN AMBULANCE!" << endl;
+            break;
+          }
+
+          digitalWrite(Led, HIGH);
+          sensorState = digitalRead(sensorPin);
+
+          // Send the data in centimetrs to the app
+          //at_client->put_ak(*at_key, to_string(distanceCM));
+
+          delay(1000);
+
+          // Tell the app that nothing has been detected:
+          // The Java app will continue having the same
+          // latest value of nothing having been within proximity. 
+          if (sensorState == HIGH)
+          {
+            cout << "Nothing is within proximity 2" << endl;
+            at_client->put_ak(*at_key, nothing);
+          }
+
+        } // Inner Most While loop: SOmething in proximity, thus read distance from UO.
+        digitalWrite(Led, LOW);
+      } // Second Most While Loop, checks if there is a collision
+    } // If statement that checks whether monitoring is active
+  } // Outer Most While Loop
 }
 
 // Send the data of the distance in centimeters to the atsign java app
