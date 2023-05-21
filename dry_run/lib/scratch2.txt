@@ -1,0 +1,287 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:flutter/material.dart';
+import 'transfer_functions.dart';
+
+import 'dart:async';
+import 'dart:math';
+import 'package:flutter/material.dart';
+
+// * Once the onboarding process is completed you will be taken to this screen
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
+  // In snackbar, HomeScrene extends StatefulWidget, what's the difference
+  // between this from StatelessWidget
+  // @override
+  // State<HomeScreen> createState() => _HomeScreenState();
+
+  @override
+  Widget build(BuildContext context) {
+    // * Getting the AtClientManager instance to use below
+    AtClientManager atClientManager = AtClientManager.getInstance();
+
+    String? currentAtsign;
+    late AtClient atClient;
+    final myController = TextEditingController();
+
+    // There is some notification code here, but that could be ignored.
+
+    atClient = atClientManager.atClient; // get the current atsign associated
+    // with the atClientManager
+    currentAtsign = atClient.getCurrentAtSign(); // THis is the chosen @sign
+    // from the onboarding
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Collision Monitor'),
+      ),
+      body: Center(
+        child: Column(children: [
+          const Text('Successfully onboarded and navigated to FirstAppScreen'),
+
+          // * Use the AtClientManager instance to get the AtClient
+          // * current Atsign has already been initialized by the statements
+          // * atCLient = atClientManager.atClient;
+          // * and currentAtsign = atClient.getCurrentAtSign();
+          // * Then use the AtClient to get the current @sign
+          Text('Current @sign: ${atClientManager.atClient.getCurrentAtSign()}'),
+          const Spacer(flex: 1),
+          const Text('Which @sign would you like to monitor?'),
+          TextField(
+            controller: myController,
+            textAlign: TextAlign.center,
+          ),
+          ElevatedButton(
+            onPressed: () {
+              activateMonitor(context, myController.text);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => RandomNumberScreen(
+                          text: myController.text,
+                        )),
+              );
+            },
+            child: Text('Start'),
+          ),
+          const Spacer(flex: 1),
+        ]),
+      ),
+    );
+  }
+}
+
+class RandomNumberScreen extends StatefulWidget {
+  final String text; // This screen waits for a string valuu, expected on
+  // its constructor
+  RandomNumberScreen({required this.text});
+  @override
+  _RandomNumberScreenState createState() => _RandomNumberScreenState();
+}
+
+class _RandomNumberScreenState extends State<RandomNumberScreen>
+    with SingleTickerProviderStateMixin {
+  double _randomNumber = 0;
+  bool collision = false;
+  Timer? _timer;
+
+  // worry about alterations to width and height
+  double esp_height = 200;
+  double esp_width = 200;
+  double uo_height = 200;
+  double uo_width = 200;
+
+  // location of esp box and unidentified object box
+
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 2),
+    );
+
+    // start the animation
+    // repeats animation
+    _controller.repeat();
+    super.initState();
+    // random number only changes after function finishes.
+    dataAnalysis(context, widget.text); // text is @6isolated69
+    // Will call respective animation functions in datanalysis
+
+    // After a collision is detected, then dataAnalysis should finish
+    // Next we begin reading the pressure data to animate the squishing
+    // of the colored squares if an object were still in proximity.
+
+    // If the object is not in proximity, then the squares bounced off
+    // each other and this will be based on the pressure.
+  }
+
+  // Based on the highest pressure, the blue rectangle will be squished and
+  // changes color
+  void squish() {}
+  // Based on if there is still something within proximity, check for
+  // string "bounce", otherwise "stuck is returned"
+  void bounce() {}
+
+  void dataAnalysis(context, String device) async {
+    while (true) {
+      String data = await getAtsignData(context, device);
+      // Collision Detected: Disable the esp32 from its next iteration of monitoring
+      if (data == "COLLISION") {
+        putAtsignData(context, device, "disable");
+        printMessage(context, 'Collision has occured at device location');
+
+        setState(() {
+          _randomNumber = 0;
+          collision = true;
+        });
+        return;
+      }
+      // Proximity Sensor detects something: Read the distances in Centimeters
+      // until nothing is no long in proximity or a collision occurs!
+      else if (data == "PROXIMITY") {
+        // Can call a separate function here and have dataAnalysis finish
+
+        printMessage(context, 'Something is within proximity');
+        while (true) {
+          await Future.delayed(const Duration(seconds: 10));
+          data = await getAtsignData(context, device);
+          // convert string data to int
+          // randomNumber = data
+          if (data == "NO_PROXIMITY") {
+            // random Number = 0
+
+            setState(() {
+              _randomNumber = 0;
+            });
+
+            break;
+          } else if (data == "COLLISION") {
+            setState(() {
+              _randomNumber = 0;
+              collision = true;
+            });
+            putAtsignData(context, device, "disable");
+            printMessage(context, 'Collision has occured at device location');
+            return;
+          }
+
+          setState(() {
+            _randomNumber = double.parse(data);
+          });
+
+          //printMessage(context,
+          //'Distance in centimeters from Unidentified Object UO: $data');
+        }
+        printMessage(context, 'Nothing is within proximity anymore');
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Calculated Distance'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Distance:',
+              style: TextStyle(fontSize: 30),
+            ),
+            Text(
+              '${_randomNumber}cm',
+              style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
+            ),
+            _randomNumber == 0.0 && collision == false
+                ? Text(
+                    'Nothing in Proximity',
+                    style: TextStyle(
+                        fontSize: 30,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.bold),
+                  )
+                : SizedBox.shrink(),
+            _randomNumber == 0.0 && collision == true
+                // Create an animation here where the balls will bounce off
+                // each other. Additionally, this bounce animation may depend
+                // on the retrieved value of the esp32 connected to the pressure
+                // sensor Unmit.
+                ? Text(
+                    'Collision Occured at Object site',
+                    style: TextStyle(
+                        fontSize: 30,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.bold),
+                  )
+                : SizedBox.shrink(),
+            SizedBox(height: 40),
+            AnimatedBuilder(
+                animation: _controller.view,
+                builder: (context, child) {
+                  // We want to return a translated version
+                  // of the children, and a resizing of them.
+                  return Transform.translate(offset: offset)
+
+                  // returns a rotated version of the child
+                  //return Transform.rotate(
+                  //  angle: _controller.value * 2 * pi,
+                  //  child: child,
+                  //);
+                },
+                child: Container(
+                  width: esp_height,
+                  height: esp_width,
+                  color: Colors.blue,
+                  child: Text(
+                    'esp32',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                )),
+            ElevatedButton(
+              onPressed: () {
+                printMessage(
+                    context, "restarting monitor, please wait 30 seconds.");
+                putAtsignData(context, widget.text, "reset");
+                // Give time for the esp32 to check for "reset" before sending
+                // another string active. "reset" is useless if collision has
+                // occured, so "diable" is sent to esp32, but what about when
+                // recording distances.
+                Timer(Duration(seconds: 6), () {
+                  activateMonitor(context, widget.text);
+                });
+                // activateMonitor just sends a string "active", the function
+                // dataAnalysis can work independently from activateMonitor.
+                // Functions work separately from the widget code, so
+                // on push, naviagation happens immediately.
+                Timer(Duration(seconds: 20), () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => RandomNumberScreen(
+                              text: widget.text,
+                            )),
+                  );
+                });
+              },
+              child: Text('Restart'),
+            ),
+            const Spacer(flex: 1),
+          ],
+        ),
+      ),
+    );
+  }
+}

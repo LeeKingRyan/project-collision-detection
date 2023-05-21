@@ -140,10 +140,11 @@ class _RandomNumberScreenState extends State<RandomNumberScreen> {
             printMessage(context, 'Collision has occured at device location');
             return;
           }
-
-          setState(() {
-            _randomNumber = double.parse(data);
-          });
+          if (data != "PROXIMITY") {
+            setState(() {
+              _randomNumber = double.parse(data);
+            });
+          }
 
           //printMessage(context,
           //'Distance in centimeters from Unidentified Object UO: $data');
@@ -218,28 +219,39 @@ class _RandomNumberScreenState extends State<RandomNumberScreen> {
                 );
               },
             ),
-            ElevatedButton(
-              onPressed: () {
-                printMessage(
-                    context, "restarting monitor, please wait 5 seconds.");
-                activateMonitor(context, widget.text);
-                // activateMonitor just sends a string "active", the function
-                // dataAnalysis can work independently from activateMonitor.
-                // Functions work separately from the widget code, so
-                // on push, naviagation happens immediately.
-                Timer(Duration(seconds: 5), () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => RandomNumberScreen(
-                              text: widget.text,
-                            )),
-                  );
-                });
-              },
-              child: Text('Restart'),
+            Expanded(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: ElevatedButton(
+                  onPressed: () {
+                    printMessage(
+                        context, "restarting monitor, please wait 30 seconds.");
+                    putAtsignData(context, widget.text, "reset");
+                    // Give time for the esp32 to check for "reset" before sending
+                    // another string active. "reset" is useless if collision has
+                    // occured, so "diable" is sent to esp32, but what about when
+                    // recording distances.
+                    Timer(Duration(seconds: 6), () {
+                      activateMonitor(context, widget.text);
+                    });
+                    // activateMonitor just sends a string "active", the function
+                    // dataAnalysis can work independently from activateMonitor.
+                    // Functions work separately from the widget code, so
+                    // on push, naviagation happens immediately.
+                    Timer(Duration(seconds: 20), () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => RandomNumberScreen(
+                                  text: widget.text,
+                                )),
+                      );
+                    });
+                  },
+                  child: Text('Restart'),
+                ),
+              ),
             ),
-            const Spacer(flex: 1),
           ],
         ),
       ),

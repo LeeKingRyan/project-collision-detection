@@ -1,0 +1,117 @@
+@override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Collision Detection'),
+      ),
+      body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Stack(
+            children: [
+              Positioned(
+                  top: 30,
+                  left: 10,
+                  child: Text(
+                    'Calculated Distance: ${distance}cm',
+                    style: TextStyle(fontSize: 20),
+                  )),
+              distance == 0.0 && collision == false
+                  ? Positioned(
+                      bottom: 250,
+                      left: 50,
+                      child: Text(
+                        'Nothing in Proximity',
+                        style: TextStyle(
+                            fontSize: 30,
+                            fontStyle: FontStyle.italic,
+                            fontWeight: FontWeight.bold),
+                      ))
+                  : SizedBox.shrink(),
+              distance == 0.0 && collision == true
+                  ? Positioned(
+                      bottom: 400,
+                      left: 50,
+                      child: Text(
+                        'Collision Occured at Object site',
+                        style: TextStyle(
+                            fontSize: 30,
+                            fontStyle: FontStyle.italic,
+                            fontWeight: FontWeight.bold),
+                      ))
+                  : SizedBox.shrink(),
+              AnimatedPositioned(
+                duration: Duration(seconds: 2),
+                width: uoWidth,
+                height: uoHeight,
+                // if distance is greater than 0, then have the left
+                // equal
+                // MediaQuery.of(context).size.width/2 subtracted by
+                // esp_position which is distance/2 + esp_width/2
+
+                // Initially at the center
+                left:
+                    ((MediaQuery.of(context).size.width / 2) - 30) + uoPosition,
+                bottom: MediaQuery.of(context).size.height / 2,
+                curve: Curves.fastLinearToSlowEaseIn,
+                child: Container(
+                  color: Colors.red,
+                  child: const Center(child: Text('UFO')),
+                ),
+              ),
+              AnimatedPositioned(
+                duration: Duration(seconds: 2),
+                width: espWidth,
+                height: espHeight,
+                // if distance is greater than 0, then have the left
+                // equal
+                // MediaQuery.of(context).size.width/2 subtracted by
+                // esp_position which is distance/2 + esp_width/2
+
+                // Initially at the center
+                left: ((MediaQuery.of(context).size.width / 2) - 30) -
+                    espPosition,
+                bottom: MediaQuery.of(context).size.height / 2,
+                curve: Curves.fastLinearToSlowEaseIn,
+                child: Container(
+                  color: collision == true ? Colors.purple : Colors.blue,
+                  child: const Center(child: Text('esp32')),
+                ),
+              ),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      printMessage(context,
+                          "restarting monitor, please wait 30 seconds.");
+                      putAtsignData(context, widget.text, "reset");
+                      // Give time for the esp32 to check for "reset" before sending
+                      // another string active. "reset" is useless if collision has
+                      // occured, so "diable" is sent to esp32, but what about when
+                      // recording distances.
+                      Timer(Duration(seconds: 6), () {
+                        activateMonitor(context, widget.text);
+                      });
+                      // activateMonitor just sends a string "active", the function
+                      // dataAnalysis can work independently from activateMonitor.
+                      // Functions work separately from the widget code, so
+                      // on push, naviagation happens immediately.
+                      Timer(Duration(seconds: 20), () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => RandomNumberScreen(
+                                    text: widget.text,
+                                  )),
+                        );
+                      });
+                    },
+                    child: Text('Restart'),
+                  ),
+                ),
+              ),
+            ],
+          )),
+    );
+  }
+}

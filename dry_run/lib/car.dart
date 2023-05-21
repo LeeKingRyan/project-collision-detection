@@ -1,0 +1,133 @@
+import 'dart:async';
+import 'dart:math';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Collision Detection App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: RandomNumberScreen(),
+    );
+  }
+}
+
+class RandomNumberScreen extends StatefulWidget {
+  @override
+  _RandomNumberScreenState createState() => _RandomNumberScreenState();
+}
+
+class _RandomNumberScreenState extends State<RandomNumberScreen> {
+  int _randomNumber = 0;
+  Timer? _timer;
+  bool _started = false;
+
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 3), (timer) {
+      setState(() {
+        _randomNumber = Random().nextInt(5);
+      });
+    });
+  }
+
+  void _stopTimer() {
+    _timer?.cancel();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Random Distance'),
+      ),
+      body: Center(
+        child: Container(
+          color: Colors.white,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Distance:',
+                style: TextStyle(fontSize: 30),
+              ),
+              Text(
+                '${_randomNumber}cm',
+                style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 20),
+              Expanded(
+                child: Stack(
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    Container(
+                      width: 120,
+                      height: double.infinity,
+                      color: Colors.grey[300],
+                    ),
+                    Positioned(
+                      bottom: 50,
+                      child: Icon(Icons.horizontal_rule_rounded,
+                          color: Colors.brown, size: 100),
+                    ),
+                    TweenAnimationBuilder(
+                      tween: Tween<double>(
+                          begin: 0, end: _randomNumber.toDouble() * 40),
+                      duration: Duration(milliseconds: 1500),
+                      curve: Curves.easeOut,
+                      builder: (BuildContext context, double distance,
+                          Widget? child) {
+                        return Positioned(
+                          bottom: 200 + distance,
+                          child: Column(
+                            children: [
+                              Text(
+                                _randomNumber == 0 ? 'Collision!' : '',
+                                style: TextStyle(
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.red),
+                              ),
+                              Icon(Icons.directions_car_filled,
+                                  color: Colors.blue, size: 100),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    if (_started) {
+                      _stopTimer();
+                    } else {
+                      _startTimer();
+                    }
+                    _started = !_started;
+                  });
+                },
+                child: Text(_started ? 'Stop' : 'Start'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
