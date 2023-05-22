@@ -230,6 +230,11 @@ class _CollisionBallsScreenState extends State<CollisionBallsScreen> {
                     // Await 30 seconds, before calling activateMonitor again,
                     // so that the esp32 has time to send the string
                     // "NO_PROXIMITY" after restarting
+
+                    // Reset the collision status to false.
+                    setState(() {
+                      collision = false;
+                    });
                     Timer(Duration(seconds: 30), () {
                       activateMonitor(context, widget.text);
                       // Navigate to CollisionBallScreen again

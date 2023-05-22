@@ -2,7 +2,7 @@
 // @sign. In this case, we want to send the string to an esp32 device to
 // activate use of its sensors.
 import 'package:at_client_mobile/at_client_mobile.dart';
-import 'package:dry_run/main.dart';
+import 'package:flutter_app/main.dart';
 
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
