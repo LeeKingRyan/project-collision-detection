@@ -1,0 +1,156 @@
+#include <iostream>
+#include "monitor.h"
+
+#include <Arduino.h>
+#include <WiFiClientSecure.h>
+#include <SPIFFS.h>
+#include "at_client.h"
+#include <string>
+#include "constants.h"
+using namespace std;
+
+// define sound speed in cm/uS
+#define SOUND_SPEED 0.034
+#define CM_TO_INCH 0.393701
+#define LED 2 // LED pin on esp32
+// Constant strings to send to flutter @sign when appropriate.
+#define approximate std::string("PROXIMITY")
+#define nothing std::string("NO_PROXIMITY")
+
+void collision_monitor(Monitor cSystem) {
+    // Start the serial communication for the sensors
+    Serial.begin(115200);
+    //  Proximity sensor
+    pinMode(LED, OUTPUT); // LED on esp32.
+    // digitalWrite(2, HIGH);
+    pinMode(cSystem.proxPin, INPUT); // Set the proxPin as Input
+    int proxState = 0;// set digital variable val for proximity sensor
+
+    // Ultrasonic Sensor
+    pinMode(cSystem.trigPin, OUTPUT); // Sets the trigPin as an Output
+    pinMode(cSystem.echoPin, INPUT); // Sets the echoPin as an Input
+    long duration; // time a signal returns after emission.
+    float distanceCM; // calculated distance in cm, converted from duration
+    float distanceInch; // calculated distince in inches, converted from duration
+    // distince in meters is calculated as follows:
+    // distance = duration * 340 m/s * 0.5. 
+
+    // Collision sensor
+    pinMode(cSystem.collPin,INPUT);// set collPin as input
+    int colState = 0; // set digital variable val for collision sensor
+
+    // Constant strings to send to flutter @sign when appropriate.
+    //const auto approximate = std::string("PROXIMITY");
+    //const auto nothing = std::string("NO_PROXIMITY");
+
+
+    cout << "Nothing is within proximity " << endl;
+    // Send string "NO_PROXIMITY" to flutter @sign, because
+    // ideally, nothing is initally within proximity when
+    // starting monitoring system.
+    cSystem.client->put_ak(*cSystem.putkey, nothing);
+
+
+    while (true)
+    {
+        // Check if the Flutter application restarted, thus sent string "reset"
+        if (cSystem.client->get_ak(*cSystem.getkey) == "reset"){return;}
+
+        colState=digitalRead(cSystem.collPin);// read input value from collPin
+
+        if(colState!=HIGH)// Collision sensor detects a signal when LOW
+        {
+            digitalWrite(LED, LOW); // Light up LED on esp32
+            cout << "COLLISION OCCURED! CALL AN AMBULANCE!" << endl;
+            const auto value = std::string("COLLISION");
+            // Write to Flutter application that collision occured by sending string
+            // "COLLISION"
+            cSystem.client->put_ak(*cSystem.putkey, value);
+
+            // Flutter app will send string "disabled" in response, but that will
+            // take a moment, thus call delay() before exiting method
+            // collision_monitor(), so that the new status of monitoring is
+            // checked, not the previous ("enabled" or "diabled").
+            delay(10000);
+            return;
+        }
+
+        proxState = digitalRead(cSystem.proxPin); // Read the pin of proximity sensor
+
+        // If the proximity sensor detects something, then determine the distance
+        // from esp32 to unidentified object (UO)
+        if (proxState == LOW) {
+            cout << "Something is within Proximity. Record the distances from UO!" << endl;
+            // Signal to Flutter app that something is within proximity - send string "PROXIMITY"
+            cSystem.client->put_ak(*cSystem.putkey, approximate);
+        }
+
+        // Stop recording distances once nothing is no longer in proximity
+        while (proxState != HIGH)
+        {
+            // Check if the Flutter application restarted
+            if (cSystem.client->get_ak(*cSystem.getkey) == "reset"){return;}
+
+            // Clears the trigPin
+            digitalWrite(cSystem.trigPin, LOW);
+            delayMicroseconds(2);
+            // Sets the trigPin on HIGH state for 10 micor seconds
+            digitalWrite(cSystem.trigPin, HIGH);
+            delayMicroseconds(10);
+            digitalWrite(cSystem.trigPin, LOW);
+
+            // reads the echoPin, returns the sound wave travel time in microseconds
+            duration = pulseIn(cSystem.echoPin, HIGH);
+
+            // Calculate the distance in centimeters
+            distanceCM = duration * SOUND_SPEED/2;
+            // Convert distance to inches
+            distanceInch = distanceCM * CM_TO_INCH;
+
+            // Prints the distance in the Serial Monitor
+            Serial.print("Distance (cm): ");
+            Serial.println(distanceCM);
+            Serial.print("Distance (inch): ");
+            Serial.println(distanceInch);
+
+            // Put the distance in centimeters to the atServer with the put atkey
+            const auto distance = std::to_string(distanceCM);
+            cSystem.client->put_ak(*cSystem.putkey, distance);
+
+            delay(1000);
+
+            colState=digitalRead(cSystem.collPin); // read value on collison and assign it to val
+
+            if(colState!=HIGH)// when collision sensor detects a signal, LED turns on.
+            {
+                digitalWrite(2,LOW);
+                cout << "COlLISION OCCURED! CALL AN AMBULANCE!" << endl;
+                const auto value = std::string("COLLISION");
+                cSystem.client->put_ak(*cSystem.putkey, value);
+                delay(10000);
+                return;
+            }
+ 
+            proxState = digitalRead(cSystem.proxPin);
+
+
+            // Check if something is within proximity still. If not,
+            // then proceed to tell the flutter app
+            if (proxState == HIGH)
+            {
+                cout << "Nothing is within proximity " << endl;
+                cSystem.client->put_ak(*cSystem.putkey, nothing);
+            }
+
+        } // Inner Most While loop: Something in proximity, thus read distance from UO;
+          // is there a collision; or nothing is no longer in proximity
+    } // Outer Most While Loop, checks if: flutter app resets; a collision is detected;
+      // or something is in proximity
+}
+
+// Function checks whether Flutter app called for a reset:
+bool reset(Monitor system) {
+    
+}
+// Function checks whether a Collision is detected:
+bool detect_collision()
